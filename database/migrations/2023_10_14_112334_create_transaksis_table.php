@@ -17,6 +17,7 @@ return new class extends Migration
             $table->integer('id_obat');
             $table->integer('jumlah');
             $table->integer('total');
+            $table->string('status');
             $table->timestamps();
         });
     }

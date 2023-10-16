@@ -11,4 +11,8 @@ class Obat extends Model
 
     protected $guarded = [];
     protected $table = 'obats';
+
+    public function transaksi() {
+        return $this->hasOne(Transaksi::class, 'id_obat');
+    }
 }

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ObatController;
+use App\Http\Controllers\TransaksiController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -26,3 +27,9 @@ Route::get('/obat', [ObatController::class, 'showAll']);
 Route::get('/obat/{id}', [ObatController::class, 'showById']);
 Route::post('/editobat/{id}', [ObatController::class, 'editObat']);
 Route::delete('/deleteobat/{id}', [ObatController::class, 'deleteObat']);
+
+Route::post('/addtocart/{id}', [TransaksiController::class, 'addToCart']);
+Route::delete('/deletecart/{id}', [TransaksiController::class, 'deleteCart']);
+Route::put('/editcart/{id}', [TransaksiController::class, 'editCart']);
+Route::get('/cart/{id}', [TransaksiController::class, 'cart']);
+
