@@ -31,5 +31,6 @@ Route::delete('/deleteobat/{id}', [ObatController::class, 'deleteObat']);
 Route::post('/addtocart/{id}', [TransaksiController::class, 'addToCart']);
 Route::delete('/deletecart/{id}', [TransaksiController::class, 'deleteCart']);
 Route::put('/editcart/{id}', [TransaksiController::class, 'editCart']);
+Route::put('/ordercart/{id}', [TransaksiController::class, 'orderCart']);
 Route::get('/cart/{id}', [TransaksiController::class, 'cart']);
 

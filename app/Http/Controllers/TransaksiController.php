@@ -86,4 +86,26 @@ class TransaksiController extends Controller
             ], 400);
         }
     }
+
+    public function orderCart($id) {
+        $data = Transaksi::where('id_pelanggan', $id)->where('status', 'Unordered')->get();
+
+        if ($data->isNotEmpty()) {
+
+            foreach ($data as $datas) {
+                $datas->status = "Ordered";
+                $datas->save();
+            }
+
+
+            return response([
+                'data' => $data,
+                'message' => 'Success'
+            ], 200);
+        } else {
+            return response([
+                'message' => 'Order empty'
+            ], 400);
+        }
+    }
 }
