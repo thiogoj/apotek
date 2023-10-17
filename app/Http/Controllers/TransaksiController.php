@@ -73,7 +73,7 @@ class TransaksiController extends Controller
     }
 
     public function cart($id) {
-        $data = Transaksi::with(['obat'])->where('id_pelanggan', $id)->get();
+        $data = Transaksi::with(['obat'])->where('id_pelanggan', $id)->where('status', 'Unordered')->get();
 
         if ($data->isNotEmpty()) {
             return response([

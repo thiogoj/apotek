@@ -48,8 +48,13 @@ class ObatController extends Controller
         ], 200);
     }
 
-    public function showAll() {
-        $data = Obat::get();
+    public function showAll(Request $request) {
+        if ($request->has('search')) {
+            $data = Obat::where('nama', 'like', '%' . $request->search . '%')->get();
+        } else {
+            $data = Obat::get();
+        }
+
 
         if ($data) {
             return response([
@@ -83,7 +88,7 @@ class ObatController extends Controller
 
         if ($data) {
             $data->delete();
-            
+
             return response([
                 'message' => 'Success'
             ], 200);
@@ -118,7 +123,7 @@ class ObatController extends Controller
                 $data->keterangan = $request->keterangan;
                 $data->harga = $request->harga;
                 $data->stok = $request->stok;
-    
+
             if ($request->hasFile('gambar')) {
                 $image = $request->file('gambar');
                 $imageName = Str::random(12) . '.' . $image->getClientOriginalExtension();
@@ -126,13 +131,13 @@ class ObatController extends Controller
                 $data->gambar = $imageName;
                 $data->save();
             }
-    
+
             return response([
                 'data' => $data,
                 'message' => 'Success'
             ], 200);
         }
 
-        
+
     }
 }
