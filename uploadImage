@@ -1,0 +1,151 @@
+package com.joaquin.uploadimage
+
+import android.content.ContentResolver
+import android.content.ContentValues
+import android.net.Uri
+import android.os.Bundle
+import android.provider.MediaStore
+import android.widget.ArrayAdapter
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import com.joaquin.uploadimage.databinding.ActivityMainBinding
+import org.json.JSONObject
+import java.io.*
+import java.net.HttpURLConnection
+import java.net.URL
+import java.util.concurrent.Executor
+import java.util.concurrent.Executors
+
+class MainActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityMainBinding
+    private var selectedImage: Uri? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        binding.btnUploadImage.setOnClickListener {
+            contract.launch("image/*")
+        }
+
+        binding.btnSubmit.setOnClickListener {
+            createObat()
+        }
+
+        val items = listOf("Test1", "Test2", "test3")
+        val adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_item, items)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.spinner.adapter = adapter
+
+
+    }
+
+    private val contract = registerForActivityResult(ActivityResultContracts.GetContent()) {
+        binding.imageView.setImageURI(it)
+        binding.textView.text = it.toString()
+        selectedImage = it
+    }
+
+    private fun createObat() {
+        val executor: Executor = Executors.newSingleThreadExecutor()
+        executor.execute {
+            try {
+                val url = URL("http://192.168.1.7:8000/api/createobat")
+                val conn = url.openConnection() as HttpURLConnection
+                conn.requestMethod = "POST"
+                conn.doOutput = true
+                conn.connectTimeout = 20000
+
+                val boundary = "*****" // Boundary for multipart/form-data
+                conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
+
+                val outputStream = DataOutputStream(conn.outputStream)
+
+                // Add text fields (nama, keterangan, harga, kategori, stok)
+                addFormField(outputStream, "nama", binding.etNama.text.toString())
+                addFormField(outputStream, "keterangan", binding.etKeterangan.text.toString())
+                addFormField(outputStream, "harga", binding.etHarga.text.toString())
+                addFormField(outputStream, "kategori", binding.etKategori.text.toString())
+                addFormField(outputStream, "stok", binding.etStok.text.toString())
+
+                // Add image file
+                if (selectedImage != null) {
+                    val filePath = getImageFilePath(selectedImage)
+                    if (filePath != null) {
+                        addFilePart(outputStream, "gambar", filePath, boundary)
+                    }
+                }
+
+                // Finish the multipart request
+                val delimiter = "--$boundary\r\n"
+                val closeDelimiter = "\r\n--$boundary--"
+
+                outputStream.writeBytes(delimiter)
+                outputStream.writeBytes(closeDelimiter)
+                outputStream.flush()
+                outputStream.close()
+
+                val responseCode = conn.responseCode
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    // Handle the response here
+                    val reader = BufferedReader(InputStreamReader(conn.inputStream))
+                    val response = StringBuilder()
+                    var line: String?
+
+                    while (reader.readLine().also { line = it } != null) {
+                        response.append(line)
+                    }
+
+                    val jsonResponse = JSONObject(response.toString())
+                    println(jsonResponse.toString())
+                } else {
+                    // Handle HTTP error
+                    println("HTTP Error: $responseCode")
+                }
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+            }
+        }
+    }
+
+    private fun addFormField(outputStream: DataOutputStream, name: String, value: String) {
+        val delimiter = "\r\n--*****\r\n"
+        val contentDisposition = "Content-Disposition: form-data; name=\"$name\"\r\n\r\n"
+        outputStream.writeBytes(delimiter)
+        outputStream.writeBytes(contentDisposition)
+        outputStream.writeBytes(value)
+    }
+
+    private fun addFilePart(outputStream: DataOutputStream, fieldName: String, filePath: String, boundary: String) {
+        val delimiter = "\r\n--$boundary\r\n"
+        val fileName = File(filePath).name
+        val contentDisposition = "Content-Disposition: form-data; name=\"$fieldName\"; filename=\"$fileName\"\r\n"
+        val contentType = "Content-Type: application/octet-stream\r\n\r\n"
+        outputStream.writeBytes(delimiter)
+        outputStream.writeBytes(contentDisposition)
+        outputStream.writeBytes(contentType)
+
+        val fileInputStream = FileInputStream(filePath)
+        val buffer = ByteArray(1024)
+        var bytesRead: Int
+        while (fileInputStream.read(buffer).also { bytesRead = it } != -1) {
+            outputStream.write(buffer, 0, bytesRead)
+        }
+        outputStream.writeBytes("\r\n")
+        fileInputStream.close()
+    }
+
+    private fun getImageFilePath(uri: Uri?): String? {
+        val projection = arrayOf(MediaStore.Images.Media.DATA)
+        val cursor = contentResolver.query(uri!!, projection, null, null, null)
+        if (cursor != null) {
+            val column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
+            cursor.moveToFirst()
+            val path = cursor.getString(column_index)
+            cursor.close()
+            return path
+        }
+        return null
+    }
+}
