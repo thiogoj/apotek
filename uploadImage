@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity() {
         val executor: Executor = Executors.newSingleThreadExecutor()
         executor.execute {
             try {
-                val url = URL("http://192.168.1.7:8000/api/createobat")
+                val url = URL("http://192.168.56.1:8000/api/createobat")
                 val conn = url.openConnection() as HttpURLConnection
                 conn.requestMethod = "POST"
                 conn.doOutput = true
